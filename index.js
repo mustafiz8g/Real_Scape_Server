@@ -36,6 +36,8 @@ const verifyToken = async (req, res, next) => {
   })
 }
 
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.nq2rk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -51,10 +53,29 @@ async function run() {
 
     const db = client.db('property-session')
     const usersCollection = db.collection('users')
-    const plantsCollection = db.collection('properties')
+    const propertiesCollection = db.collection('properties')
+
+        // save or update user in db
+        app.post('/users/:email', async(req, res) => {
+            const email = req.params.email;
+            const query = { email }
+            const user = req.body;
+            // check if user exist in deb
+            const isExist = await usersCollection.findOne(query)
+            if(isExist){
+              return res.send(isExist)
+            }
+      
+            const result = await usersCollection.insertOne({
+              ...user,
+              role: 'customer',
+              timestamp: Date.now(),
+              })
+            res.send(result)
+          })
 
     // Generate jwt token
-    app.post('/jwt', async (req, res) => {
+    app.post('/jwt',verifyToken, async (req, res) => {
       const email = req.body
       const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
         expiresIn: '365d',
@@ -82,6 +103,16 @@ async function run() {
       }
     })
 
+       // save a property data in db
+       app.post('/properties', async(req, res) =>{
+        const property = req.body;
+        const result = await propertiesCollection.insertOne(property)
+        res.send(result)
+      })
+      app.get('/properties', async(req, res) =>{
+        const properties = await propertiesCollection.find().toArray()
+        res.send(properties)
+      })
 
 
     // Send a ping to confirm a successful connection
