@@ -2,7 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+const { MongoClient, ServerApiVersion } = require('mongodb')
 const jwt = require('jsonwebtoken')
 const morgan = require('morgan')
 
@@ -56,65 +56,51 @@ async function run() {
     const propertiesCollection = db.collection('properties')
 
 
-      // save or update user in db
-      app.post('/users/:email', async(req, res) => {
-        const email = req.params.email;
-        const query = { email }
-        const user = req.body;
-        // check if user exist in deb
-        const isExist = await usersCollection.findOne(query)
-        if(isExist){
-          return res.send(isExist)
-        }
-  
-        const result = await usersCollection.insertOne({
-          ...user,
-          role: 'customer',
-          timestamp: Date.now(),
+        // save or update a user in db
+        app.post('/users/:email', async (req, res) => {
+            const email = req.params.email
+            const query = { email }
+            const user = req.body
+            // check if user exists in db
+            const isExist = await usersCollection.findOne(query)
+            if (isExist) {
+              return res.send(isExist)
+            }
+            const result = await usersCollection.insertOne({
+              ...user,
+              role: 'customer',
+              timestamp: Date.now(),
+            })
+            res.send(result)
           })
-        res.send(result)
-      })
-
-
-            app.patch('/users/:email',verifyToken, async(req, res) => { 
-      const email = req.params.email;
-      const query = { email }
-      const user = await usersCollection.findOne(query)
-      if(!user || user?.status === 'requested') return res.status(400 ).send({message: 'already requested wait some time'})
-      // const {status} = req.body;
-      const updateDoc = {
-        $set: {
-          status: 'requested',
-        },
-      }
-      const result = await usersCollection.updateOne(query, updateDoc)
-      res.send(result)
-    })
-
-
-    app.patch('/users/:email',verifyToken, async(req, res) => { 
-        const email = req.params.email;
-        const query = { email }
-        const user = await usersCollection.findOne(query)
-        if(!user || user?.status === 'requested') return res.status(400 ).send({message: 'already requested wait some time'})
-        // const {status} = req.body;
-        const updateDoc = {
-          $set: {
-            status: 'requested',
-          },
-        }
-        const result = await usersCollection.updateOne(query, updateDoc)
-        res.send(result)
-      })
-  
-          //get user role
-    app.get('/users/role/:email',verifyToken, async(req, res) => {
-        const email = req.params.email;
-        const query = { email }
-        const result = await usersCollection.findOne(query)
-        res.send({role: result?.role})
-      })
-  
+      
+          // manage user status and role
+          app.patch('/users/:email', verifyToken, async (req, res) => {
+            const email = req.params.email
+            const query = { email }
+            const user = await usersCollection.findOne(query)
+            if (!user || user?.status === 'Requested')
+              return res
+                .status(400)
+                .send('You have already requested, wait for some time.')
+      
+            const updateDoc = {
+              $set: {
+                status: 'Requested',
+              },
+            }
+            const result = await usersCollection.updateOne(query, updateDoc)
+            console.log(result)
+            res.send(result)
+          })
+      
+          // get user role
+          app.get('/users/role/:email', async (req, res) => {
+            const email = req.params.email
+            const result = await usersCollection.findOne({ email })
+            res.send({ role: result?.role })
+          })
+      
 
     // Generate jwt token
     app.post('/jwt',verifyToken, async (req, res) => {
