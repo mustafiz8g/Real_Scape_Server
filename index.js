@@ -336,7 +336,7 @@ async function run() {
         });
 
         app.get('/properties', async (req, res) => {
-            const properties = await propertiesCollection.find().limit(6).toArray()
+            const properties = await propertiesCollection.find().toArray()
             res.send(properties)
         })
 
