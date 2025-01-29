@@ -418,9 +418,72 @@ async function run() {
                 res.status(500).send({ message: 'Error marking user as fraud' });
             }
         });
-        
 
-          // Delete a review by review ID
+
+        // requested property
+
+
+    // Get all offers
+app.get('/offers', async (req, res) => {
+    try {
+        const offers = await offersCollection.find().toArray();
+        res.json(offers);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Accept offer
+app.patch('/offers/:id/accept', async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        const offer = await offersCollection.findOne({ _id: new ObjectId(offerId) });
+        if (!offer) return res.status(404).json({ error: 'Offer not found' });
+
+        await offersCollection.updateOne(
+            { _id: new ObjectId(offerId) },
+            { $set: { boughtStatus: 'accepted' } }
+        );
+
+        await offersCollection.updateMany(
+            { propertyId: offer.propertyId, _id: { $ne: new ObjectId(offerId) } },
+            { $set: { boughtStatus: 'rejected' } }
+        );
+
+        res.json({ message: 'Offer accepted successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// Reject offer
+app.patch('/offers/:id/reject', async (req, res) => {
+    try {
+        const offerId = req.params.id;
+        await offersCollection.updateOne(
+            { _id: new ObjectId(offerId) },
+            { $set: { boughtStatus: 'rejected' } }
+        );
+        res.json({ message: 'Offer rejected successfully' });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+
+
+
+app.get("/offers", async (req, res) => {
+    try {
+      const { userEmail } = req.query;
+      if (!userEmail) return res.status(400).json({ error: "User email is required" });
+  
+      const offers = await offersCollection.find({ userEmail }).toArray();
+      res.json(offers);
+    } catch (error) {
+      res.status(500).json({ error: error.message });
+    }
+  });
 
 
 
