@@ -10,7 +10,7 @@ const port = process.env.PORT || 8100
 const app = express()
 // middleware
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174','https://realscape-c226c.web.app','realscape-c226c.firebaseapp.com'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://realscape-c226c.web.app', 'realscape-c226c.firebaseapp.com'],
     credentials: true,
     optionSuccessStatus: 200,
 }
@@ -77,11 +77,7 @@ async function run() {
             res.send(result)
         })
 
-        // get users
-        app.get('/users', async (req, res) => {
-            const result = await usersCollection.find().toArray();
-            res.send(result)
-        })
+       
 
         // manage user status and role
         app.patch('/users/:email', verifyToken, async (req, res) => {
@@ -148,46 +144,49 @@ async function run() {
             res.send(result)
         })
         // get all property for advertise section
-        app.get('/properties', async (req, res) => {
-            const properties = await propertiesCollection.find().limit(6).toArray()
-            res.send(properties)
-        })
-      
-
-
-    
-        // Route to fetch properties with search and sort functionality
-app.get('/propertiess', async (req, res) => {
-    try {
-      const { location, sort } = req.query;
-  
-      const query = {};
-      if (location) {
-        query.location = { $regex: location, $options: 'i' }; // 
-      }
-  
-      let sortQuery = {};
-      if (sort === 'lowToHigh') {
-        sortQuery.minPrice = 1; // Ascending order
-      } else if (sort === 'highToLow') {
-        sortQuery.minPrice = -1; // Descending order
-      }
-  
-      const properties = await propertiesCollection.find(query).sort(sortQuery).toArray();
-      res.send(properties);
-    } catch (error) {
-      console.error('Error fetching properties:', error);
-      res.status(500).send({ error: 'Failed to fetch properties' });
-    }
-  });
-  
-
-
-    
-
-
-
         
+        app.get('/propertiesverified', async (req, res) => {
+            try {
+                const properties = await propertiesCollection.find({ verification: "verified" }).limit(6).toArray();
+                res.send(properties);
+            } catch (error) {
+                res.status(500).send({ error: 'Failed to fetch properties' });
+            }
+        });
+        
+        
+       
+        // Route to fetch properties with search and sort functionality
+        app.get('/propertiess', async (req, res) => {
+            try {
+                const { location, sort } = req.query;
+        
+                const query = { verification: "verified" };
+                if (location) {
+                    query.location = { $regex: location, $options: 'i' };
+                }
+        
+                let sortQuery = {};
+                if (sort === 'lowToHigh') {
+                    sortQuery.minPrice = 1; // Ascending order
+                } else if (sort === 'highToLow') {
+                    sortQuery.minPrice = -1; // Descending order
+                }
+        
+                const properties = await propertiesCollection.find(query).sort(sortQuery).toArray();
+                res.send(properties);
+            } catch (error) {
+                console.error('Error fetching properties:', error);
+                res.status(500).send({ error: 'Failed to fetch properties' });
+            }
+        });
+        
+
+
+
+
+
+
         //get property by id
         app.get('/property/:id', async (req, res) => {
             const id = req.params.id;
@@ -195,7 +194,7 @@ app.get('/propertiess', async (req, res) => {
             const result = await propertiesCollection.findOne(query)
             res.send(result)
         })
-        app.get('/property/:email', async(req, res) => {
+        app.get('/property/:email', async (req, res) => {
             const email = req.params.email;
 
         })
@@ -207,39 +206,39 @@ app.get('/propertiess', async (req, res) => {
             res.send(result);
         });
         // update my added property 
-     
 
 
-// Update a property
-app.put('/properties', async (req, res) => {
-    const updatedProperty = req.body;
-  
-    // Ensure the property object contains an ID
-    if (!updatedProperty._id) {
-      return res.status(400).json({ message: 'Property ID is required.' });
-    }
-  
-    try {
-      const { _id, ...propertyData } = updatedProperty;
-      const result = await propertiesCollection.updateOne(
-        { _id: new ObjectId(_id) }, // Find the property by ID
-        { $set: propertyData }      // Update the property with new data
-      );
-  
-      if (result.matchedCount === 0) {
-        return res.status(404).json({ message: 'Property not found.' });
-      }
-  
-      res.status(200).json({ message: 'Property updated successfully.', result });
-    } catch (err) {
-      console.error('Error updating property:', err);
-      res.status(500).json({ message: 'Failed to update property.', error: err.message });
-    }
-  });
+
+        // Update a property
+        app.put('/properties', async (req, res) => {
+            const updatedProperty = req.body;
+
+            // Ensure the property object contains an ID
+            if (!updatedProperty._id) {
+                return res.status(400).json({ message: 'Property ID is required.' });
+            }
+
+            try {
+                const { _id, ...propertyData } = updatedProperty;
+                const result = await propertiesCollection.updateOne(
+                    { _id: new ObjectId(_id) }, // Find the property by ID
+                    { $set: propertyData }      // Update the property with new data
+                );
+
+                if (result.matchedCount === 0) {
+                    return res.status(404).json({ message: 'Property not found.' });
+                }
+
+                res.status(200).json({ message: 'Property updated successfully.', result });
+            } catch (err) {
+                console.error('Error updating property:', err);
+                res.status(500).json({ message: 'Failed to update property.', error: err.message });
+            }
+        });
 
 
-   
-        
+
+
 
         // review submit 
         app.post('/reviews', async (req, res) => {
@@ -253,33 +252,24 @@ app.put('/properties', async (req, res) => {
             res.send(reviews)
         })
         // get review by specific email
-   
-        
+
+
         // delet review 
-        const { ObjectId } = require("mongodb");
-
-app.delete('/reviews/:id', async (req, res) => {
-    const reviewId = req.params.id; // Extract review ID from the request params
-
-    try {
-        // Validate if the ID is provided and is a valid MongoDB ObjectId
-        if (!ObjectId.isValid(reviewId)) {
-            return res.status(400).send({ message: "Invalid review ID provided." });
-        }
-
-        // Attempt to delete the review
-        const result = await reviewsCollection.deleteOne({ _id: new ObjectId(reviewId) });
-
-        if (result.deletedCount === 0) {
-            return res.status(404).send({ message: "Review not found or already deleted." });
-        }
-
-        res.send({ message: "Review deleted successfully." });
-    } catch (error) {
-        console.error("Error deleting review:", error);
-        res.status(500).send({ message: "Internal server error." });
-    }
-});
+        app.delete('/reviews/:id', async (req, res) => {
+            const { id } = req.params;
+            try {
+                const review = await reviewsCollection.findOne({ _id: new ObjectId(id) });
+                if (review) {
+                    await reviewsCollection.deleteOne({ _id: new ObjectId(id) });
+                    res.send({ message: 'Review deleted successfully' });
+                } else {
+                    res.status(404).send('Review not found');
+                }
+            } catch (error) {
+                console.error('Error deleting review:', error);
+                res.status(500).send('Error deleting review');
+            }
+        });
 
 
         // add wishlists
@@ -324,6 +314,115 @@ app.delete('/reviews/:id', async (req, res) => {
             const result = await offersCollection.insertOne(offers)
             res.send(result)
         })
+
+
+
+        // admin route 
+
+
+        // Update Property Verification Status
+        app.patch('/properties/:id', async (req, res) => {
+            try {
+                const { id } = req.params;
+                const { status } = req.body;
+                const result = await propertiesCollection.updateOne(
+                    { _id: new ObjectId(id) },
+                    { $set: { verification: status } }
+                );
+                res.send(result);
+            } catch (error) {
+                res.status(500).send({ error: 'Failed to update property' });
+            }
+        });
+
+        app.get('/properties', async (req, res) => {
+            const properties = await propertiesCollection.find().limit(6).toArray()
+            res.send(properties)
+        })
+
+
+
+
+
+
+        app.get('/users', async (req, res) => {
+            try {
+                const users = await usersCollection.find().toArray();
+                res.send(users);
+            } catch (error) {
+                res.status(500).send({ message: 'Error fetching users' });
+            }
+        });
+   
+        
+
+
+        app.put('/users/:userId/role',  async (req, res) => {
+            const userId = req.params.userId;
+            const { role } = req.body;
+            
+            try {
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $set: { role } }
+                );
+        
+                if (result.matchedCount === 0) {
+                    return res.status(404).send({ message: 'User not found' });
+                }
+        
+                const updatedUser = await usersCollection.findOne({ _id: new ObjectId(userId) });
+                res.send(updatedUser);
+            } catch (error) {
+                res.status(500).send({ message: 'Error updating user role' });
+            }
+        });
+        
+
+
+        app.delete('/users/:userId',  async (req, res) => {
+            const userId = req.params.userId;
+        
+            try {
+                const result = await usersCollection.deleteOne({ _id: new ObjectId(userId) });
+                if (result.deletedCount === 0) {
+                    return res.status(404).send({ message: 'User not found' });
+                }
+                res.send({ message: 'User deleted successfully' });
+            } catch (error) {
+                res.status(500).send({ message: 'Error deleting user' });
+            }
+        });
+        
+
+
+     
+
+
+        app.put('/users/:userId/fraud',  async (req, res) => {
+            const userId = req.params.userId;
+        
+            try {
+                const result = await usersCollection.updateOne(
+                    { _id: new ObjectId(userId) },
+                    { $set: { status: 'fraud' } }
+                );
+        
+                if (result.matchedCount === 0) {
+                    return res.status(404).send({ message: 'User not found' });
+                }
+        
+                const updatedUser = await usersCollection.findOne({ _id: new ObjectId(userId) });
+                res.send(updatedUser);
+            } catch (error) {
+                res.status(500).send({ message: 'Error marking user as fraud' });
+            }
+        });
+        
+
+          // Delete a review by review ID
+
+
 
 
         // Send a ping to confirm a successful connection
