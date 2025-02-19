@@ -10,10 +10,11 @@ const port = process.env.PORT || 8100
 const app = express()
 // middleware
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://realscape-c226c.web.app', 'realscape-c226c.firebaseapp.com'],
+    origin: ['http://localhost:5173' , 'http://localhost:5174', 'https://realscape-c226c.web.app', 'realscape-c226c.firebaseapp.com'],
     credentials: true,
     optionSuccessStatus: 200,
 }
+
 app.use(cors(corsOptions))
 
 app.use(express.json())
@@ -148,6 +149,28 @@ async function run() {
         app.get('/propertiesverified', async (req, res) => {
             try {
                 const properties = await propertiesCollection.find({ verification: "verified" }).limit(6).toArray();
+                res.send(properties);
+            } catch (error) {
+                res.status(500).send({ error: 'Failed to fetch properties' });
+            }
+        });
+
+        // for property rent section 
+        
+        app.get('/propertiesRent', async (req, res) => {
+            try {
+                const properties = await propertiesCollection.find({forRent: "yes"}).limit(3).toArray();
+                res.send(properties);
+            } catch (error) {
+                res.status(500).send({ error: 'Failed to fetch properties' });
+            }
+        });
+        
+        // for property featured section 
+        
+        app.get('/propertiesFeatured', async (req, res) => {
+            try {
+                const properties = await propertiesCollection.find({isFeatured: "yes"}).limit(2).toArray();
                 res.send(properties);
             } catch (error) {
                 res.status(500).send({ error: 'Failed to fetch properties' });
